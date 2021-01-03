@@ -509,3 +509,155 @@ class TargetCamera(MovingCamera):
             self.target.move((0, shift[1]))
 
 
+# --------------------------------------
+# Раздел модификаторов к базовым классам
+# --------------------------------------
+
+
+path_to_bullet_from_person = 'Data\\Image\\bullet.png'
+
+
+class Enemy(RotatingGameObject):
+
+    """Класс вражеского обьекта"""
+
+    def __init__(self, position, path_image, path_sound=None, speed_move=0,
+                 animation=None, time_life=None, hp=None, tag='None',
+                 name='None', always_moving=False, damage=0, rotate=(1, pygame.mouse.get_pos), target=None):
+        """Иницилизация"""
+
+        # Иницилизация родителя
+        super().__init__(position, path_image, path_sound, speed_move,
+                         animation, time_life, hp, tag, name, always_moving,
+                         damage, rotate)
+
+        self.target = target
+
+    def hit(self, damage):
+        super().hit(damage)
+
+        if not random.randrange(50):
+            if self.speed_move[0] * 2 + 5 < self.target.get_speed_move()[0] and self.speed_move[1] * 2 + 5 < self.target.get_speed_move()[1]:
+                speed = self.get_speed_move()
+                self.edit_speed_move((speed[0] * FPS * 2, speed[1] * FPS * 2))
+                self.edit_damage(self.get_damage() / 2)
+            else:
+                speed = self.target.get_speed_move()
+                self.edit_speed_move((speed[0] * FPS - 100, speed[1] * FPS - 100))
+
+    def update(self, *arg, **kwargs):
+        """Обновление обьекта"""
+
+        # Обновление родителя
+        super().update(arg, kwargs)
+
+        # Выбираем случайную точку у персонажа
+        var = random.randrange(5)
+        if var == 4:
+            tar_x, tar_y = self.target.get_rect().topright
+        elif var == 3:
+            tar_x, tar_y = self.target.get_rect().bottomright
+        elif var == 2:
+            tar_x, tar_y = self.target.get_rect().bottomleft
+        elif var == 1:
+            tar_x, tar_y = self.target.get_rect().topleft
+        else:
+            tar_x, tar_y = self.target.get_rect().center
+
+        # Двигается по осям до персонажа
+        x, y = self.get_position()
+        shift = [0, 0]
+        if tar_x > x:
+            shift[0] = 1
+        elif tar_x < x:
+            shift[0] = -1
+        if tar_y > y:
+            shift[1] = 1
+        elif tar_y < y:
+            shift[1] = -1
+
+        self.move(shift)
+
+        
+class sleep(object):
+
+    def __init__(self, timeout):
+        self.deadline = time.time() + timeout
+
+    def __await__(self):
+        def swith_to(coro):
+            current.append(coro)
+            coro.send(time.time())
+        IOLoop.instance().add_timeout(self.deadline, swith_to, current[0])
+        current.pop()
+        return (yield)
+
+
+def coroutine_start(run, *args, **kwargs):
+    coro = run(*args, **kwargs)
+    current.append(coro)
+    coro.send(None)
+
+
+async def hello(name, timeout):
+    while True:
+        now = await sleep(timeout)
+        print("Hello, {}!\tts: {}".format(name, now))
+
+
+
+class Person(RotatingGameObject):
+    bullet = pygame.image.load(path_to_bullet_from_person)
+
+    def __init__(self, position, path_image, path_sound=None, speed_move=0,
+                 animation=None, time_life=None, hp=None, tag='None',
+                 name='None', always_moving=False, damage=0,
+                 rotate=(1, pygame.mouse.get_pos)):
+        """Иницилизация"""
+        self.count = 0
+        self.time_start = datetime.now() + timedelta(0, 5)
+        # Иницилизация родителя
+        super().__init__(position, path_image, path_sound, speed_move,
+                         animation, time_life, hp, tag, name, always_moving, damage)
+
+    def shoot(self):
+        self.count += 1
+        if self.count == 60:
+            self.time_start = datetime.now() + timedelta(0, 5)
+            return
+
+        if self.count >= 60:
+            if datetime.now().second == self.time_start.second and datetime.now().hour == self.time_start.hour and datetime.now().minute == self.time_start.minute:
+                self.count = 1
+            else:
+                return
+
+        """Персонаж совершает выстрел"""
+        # Определение сторону полёта
+        x, y = 0, 0
+        coord = self.rect.center
+        delta_x = 0
+        print(self.angle)
+        if self.angle > 0:
+            y = -1
+        elif self.angle < 0:
+            y = 1
+        if 0 < self.angle < 90 or 0 > self.angle > -90:
+            x = 1
+        elif 90 < self.angle < 180 or -90 > self.angle > -180:
+            x = -1
+        if 23 < self.angle < 147:
+            delta_x = -25
+        if -147 < self.angle < -23:
+            delta_x = -25
+        ax = random.randrange(-25, 25)
+
+        image = pygame.transform.rotozoom(self.bullet, self.angle + ax, 0.1)
+        speed_move = (1000 * abs(self.vector[0] - ax / 360), 1000 * abs(self.vector[1] - ax / 360))
+
+        return GameObject((coord[0] + delta_x , coord[1]),
+                          path_image=image,
+                          speed_move=speed_move,
+                          always_moving=(x, y),
+                          damage=random.randrange(1, 11),
+                          time_life=50)
