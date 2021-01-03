@@ -16,7 +16,7 @@ ABOUT = ['Popov Maxim']
 COLOR_BACKGROUND = (255, 104, 0)
 COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
-MENU_BACKGROUND_COLOR = (228, 55, 36)
+MENU_BACKGROUND_COLOR = (40, 40, 40)
 
 
 # Выбранная сложность
@@ -31,21 +31,9 @@ main_menu = None
 surface = None
 
 
-def change_difficulty(value, difficulty, debag=False):
-    """Изменяет выбранную сложность"""
-
-    if debag:
-        selected, index = value
-        print(f'Selected difficulty: "{selected}"',
-              f'({difficulty}) at index {index}')
-
-    DIFFICULTY[0] = difficulty
-
-
 #Функция начала игры
 def play_function():
     # Define globals
-    global main_menu
     global clock
     # Выставление сложности
     difficulty = DIFFICULTY
@@ -87,7 +75,7 @@ def play_function():
     # Шрифты применяющиеся в игре
     counter = pygame.font.Font(None, 48)  # Для счётчика убийст зомби
     damage_indicator = pygame.font.Font(None, 16)   # Для отображения дамага
-    bullet_reload_indicator = pygame.font.Font(None, 48)   # Для отображения дамага
+    bullet_reload_indicator = pygame.font.Font(None, 48)   # Для отображения перезарядки
     hp_indicator = pygame.font.Font(None, 48)  # Для отоброжения хп персонажа
 
     # Добавления Фона
@@ -98,7 +86,7 @@ def play_function():
     visible_objects.add(background)
 
     # Добавления игрока
-    person = GameObjects.Person((900, 900), path_from_person, hp=10000, speed_move=(600, 600))
+    person = GameObjects.Person((900, 900), path_from_person, hp=1000, speed_move=(600, 600))
     visible_objects.add(person)
 
     # Добавление границ
@@ -132,10 +120,8 @@ def play_function():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:  # Если нажата, остановка игры
                     pause = not pause
-                if event.key == pygame.K_z:  # Если нажата +100 к счётчику
-                    counter_kill += 100
-                elif event.key == pygame.K_g:  # Если нажата, обнуляет счётчик
-                    counter_kill = 0
+                if event.key == pygame.K_z:  # Если нажата, выход в меню
+                    command_exit = True
 
         if not pause:
             # Получаем всё нажатые клавиши
@@ -185,7 +171,7 @@ def play_function():
             person.update()
             all_sprite.update()
 
-            # Добавляем зомби если их < 100
+            # Добавляем зомби если их < 30
             if len(enemy) < 30:
                 pos_spanw_x = randrange(-200, WINDOW_SIZE[0] * 1.5)
                 if 0 < pos_spanw_x < WINDOW_SIZE[0]:
@@ -224,7 +210,7 @@ def play_function():
                         indicator.add(all_sprite, visible_objects)
                         if randrange(4):
                             bull.kill()
-                        if not enemys.get_hp():
+                        if enemys.get_hp() <= 0:
                             counter_kill += 1
 
         # Отрисовка всех элементов на экране
@@ -240,25 +226,18 @@ def play_function():
 
     pygame.display.flip()
     main()
-    pygame.mixer.music.play(True)
     return
+
 
 def set_difficulty(value, difficulty):
     DIFFICULTY = difficulty
 
-def start_the_game():
-    pass
-
-
-surface = None
-main_menu = None
-
 
 def main_background():
-    surface.fill((40, 40, 40))
+    surface.fill(MENU_BACKGROUND_COLOR)
 
 
-def main(test=False):
+def main():
     global main_menu
     global surface
 
@@ -297,7 +276,7 @@ def main(test=False):
                                 ('Medium', 'MEDIUM'),
                                 ('Hard', 'HARD')],
                                selector_id='difficulty',
-                               default=1)
+                               default=1, onchange=set_difficulty)
 
     settings_menu.add_button('Return to main menu', pygame_menu.events.BACK,
                              align=pygame_menu.locals.ALIGN_CENTER)
@@ -320,7 +299,6 @@ def main(test=False):
     main_menu.add_button('Play', play_function, font_size=100)
     main_menu.add_button('Settings', settings_menu)
     main_menu.add_button('Quit', pygame_menu.events.EXIT)
-    assert main_menu.get_widget('last_name') is None
 
     # Main loop
     while True:
@@ -331,14 +309,10 @@ def main(test=False):
         main_background()
 
         # Main menu
-        main_menu.mainloop(surface, main_background, disable_loop=test, fps_limit=FPS)
+        main_menu.mainloop(surface, main_background, fps_limit=FPS)
 
         # Flip surface
         pygame.display.flip()
-
-        # At first loop returns
-        if test:
-            break
 
 
 if __name__ == '__main__':

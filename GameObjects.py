@@ -579,33 +579,6 @@ class Enemy(RotatingGameObject):
         self.move(shift)
 
 
-class sleep(object):
-
-    def __init__(self, timeout):
-        self.deadline = time.time() + timeout
-
-    def __await__(self):
-        def swith_to(coro):
-            current.append(coro)
-            coro.send(time.time())
-        IOLoop.instance().add_timeout(self.deadline, swith_to, current[0])
-        current.pop()
-        return (yield)
-
-
-def coroutine_start(run, *args, **kwargs):
-    coro = run(*args, **kwargs)
-    current.append(coro)
-    coro.send(None)
-
-
-async def hello(name, timeout):
-    while True:
-        now = await sleep(timeout)
-        print("Hello, {}!\tts: {}".format(name, now))
-
-
-
 class Person(RotatingGameObject):
     bullet = pygame.image.load(path_to_bullet_from_person)
 
