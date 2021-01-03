@@ -578,7 +578,7 @@ class Enemy(RotatingGameObject):
 
         self.move(shift)
 
-        
+
 class sleep(object):
 
     def __init__(self, timeout):
