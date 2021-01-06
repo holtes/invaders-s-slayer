@@ -599,10 +599,12 @@ class Person(RotatingGameObject):
         return self.count
 
     def shoot(self):
-        self.count += 1
+        if not self.flag:
+            self.count += 1
         if self.count == 60:
             self.flag = True
             self.last = pygame.time.get_ticks()
+            self.count = 0
             return
         if self.flag:
             now = pygame.time.get_ticks()
