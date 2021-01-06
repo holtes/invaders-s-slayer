@@ -587,21 +587,29 @@ class Person(RotatingGameObject):
                  name='None', always_moving=False, damage=0,
                  rotate=(1, pygame.mouse.get_pos)):
         """Иницилизация"""
-        self.count = 0
-        self.time_start = datetime.now() + timedelta(0, 5)
         # Иницилизация родителя
+        self.last = pygame.time.get_ticks()
+        self.cooldown = 3000
+        self.count = 0
+        self.flag = False
         super().__init__(position, path_image, path_sound, speed_move,
                          animation, time_life, hp, tag, name, always_moving, damage)
+
+    def get_count(self):
+        return self.count
 
     def shoot(self):
         self.count += 1
         if self.count == 60:
-            self.time_start = datetime.now() + timedelta(0, 5)
+            self.flag = True
+            self.last = pygame.time.get_ticks()
             return
-
-        if self.count >= 60:
-            if datetime.now().second == self.time_start.second and datetime.now().hour == self.time_start.hour and datetime.now().minute == self.time_start.minute:
+        if self.flag:
+            now = pygame.time.get_ticks()
+            if now - self.last >= self.cooldown:
+                self.flag = False
                 self.count = 1
+                return
             else:
                 return
 
@@ -610,7 +618,6 @@ class Person(RotatingGameObject):
         x, y = 0, 0
         coord = self.rect.center
         delta_x = 0
-        print(self.angle)
         if self.angle > 0:
             y = -1
         elif self.angle < 0:

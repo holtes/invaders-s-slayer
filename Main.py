@@ -3,11 +3,12 @@ import GameObjects
 import pygame_menu
 import pygame
 import os
+from datetime import datetime, timedelta
 
 # Иницилизация pygame
 pygame.init()
 
-# Инофрмация об разработчиков
+# Инофрмация о разработчике
 ABOUT = ['Popov Maxim']
 
 # Определение констант
@@ -18,26 +19,34 @@ COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
 MENU_BACKGROUND_COLOR = (40, 40, 40)
 
-
-# Выбранная сложность
-DIFFICULTY = ""
+# курсор
+MANUAL_CURSOR = pygame.image.load('Data\\Image\\scope.png')
 
 # Системыне настройки
 FPS = 60
 WINDOW_SIZE = (1270, 720)
+FULLSCREEN = pygame.display.Info()
 
+# Назначение глобальных переменных
 clock = None
 main_menu = None
 surface = None
+cursor_angle = 2
+# Выбранная сложность
+difficulty = "EASY"
+screen_size = (1280, 1024)
 
 
-#Функция начала игры
+# Функция начала игры
 def play_function():
     # Define globals
     global clock
-    # Выставление сложности
-    difficulty = DIFFICULTY
+    global cursor_angle
+    global difficulty
+    global screen_size
 
+    print(screen_size, difficulty)
+    pygame.mouse.set_visible(False)
     # Путь до изображений к игре
     path_from_background = 'Data\\Image\\Map1.png'
     path_from_person = pygame.image.load('Data\\Image\\persona.png')
@@ -90,15 +99,15 @@ def play_function():
     visible_objects.add(person)
 
     # Добавление границ
-    wall_up = GameObjects.EmptyObject((0, 0), (WINDOW_SIZE[0] + 1, 1))
-    wall_botton = GameObjects.EmptyObject((0, WINDOW_SIZE[1] - 1), (WINDOW_SIZE[0] + 1, 1))
-    wall_left = GameObjects.EmptyObject((0, 0), (1, WINDOW_SIZE[1] + 1))
-    wall_right = GameObjects.EmptyObject((WINDOW_SIZE[0] - 1, 0), (1, WINDOW_SIZE[1] + 1))
+    wall_up = GameObjects.EmptyObject((0, 0), (screen_size[0] + 1, 1))
+    wall_botton = GameObjects.EmptyObject((0, screen_size[0] - 1), (screen_size[0] + 1, 1))
+    wall_left = GameObjects.EmptyObject((0, 0), (1, screen_size[1] + 1))
+    wall_right = GameObjects.EmptyObject((screen_size[1] - 1, 0), (1, screen_size[1] + 1))
 
     # Создание камеры
     camera = GameObjects.TargetCamera(all_sprite, person,
                                       traffic_restriction=background.get_size(),
-                                      flags=pygame.FULLSCREEN | pygame.HWSURFACE)
+                                      size=screen_size)
     # Поялучаем экран камеры
     screen = camera.get_screen()
     # Регулятор FPS
@@ -139,7 +148,6 @@ def play_function():
             if keys[pygame.K_s]:
                 y += 1
             if buttons[0]:
-                if not counter_shot % 2:
                     try:
                         person.shoot().add(all_sprite, visible_objects, bullet)
                     except:
@@ -173,11 +181,11 @@ def play_function():
 
             # Добавляем зомби если их < 30
             if len(enemy) < 30:
-                pos_spanw_x = randrange(-200, WINDOW_SIZE[0] * 1.5)
-                if 0 < pos_spanw_x < WINDOW_SIZE[0]:
-                    pos_spanw_y = -200 if randrange(2) else WINDOW_SIZE[1] * 1.5
+                pos_spanw_x = randrange(-200, screen_size[0] * 1.5)
+                if 0 < pos_spanw_x < screen_size[0]:
+                    pos_spanw_y = -200 if randrange(2) else screen_size[1] * 1.5
                 else:
-                    pos_spanw_y = randrange(-200, WINDOW_SIZE[1] * 1.5)
+                    pos_spanw_y = randrange(-200, screen_size[1] * 1.5)
 
                 GameObjects.Enemy((pos_spanw_x, pos_spanw_y), choice(path_from_zombie), speed_move=randrange(100, round(101 + counter_kill * add_speed)),
                     target=person,
@@ -218,9 +226,11 @@ def play_function():
         xol = counter.render(f"Всего убито: {counter_kill}", True, [0, 0, 0])
         screen.blit(xol, (0, 0))
         hp_ind = hp_indicator.render(f"Hp: {person.get_hp()}", True, [255, 0, 255])
-        screen.blit(hp_ind, (1700, 1000))
-        bul = bullet_reload_indicator.render(f"Bullet: {60 - person.count}", True, [255, 0, 255])
-        screen.blit(bul, (1700, 70))
+        screen.blit(hp_ind, (screen_size[0] - 200, screen_size[1] - 100))
+        bul = bullet_reload_indicator.render(f"Bullet: {60 - person.get_count()}", True, [255, 0, 255])
+        screen.blit(bul, (screen_size[0] - 200, 50))
+        cursor_angle += 1
+        screen.blit(pygame.transform.rotate(MANUAL_CURSOR, cursor_angle), (pygame.mouse.get_pos()))
         clock.tick(FPS)
         pygame.display.flip()
 
@@ -229,8 +239,18 @@ def play_function():
     return
 
 
-def set_difficulty(value, difficulty):
-    DIFFICULTY = difficulty
+def set_difficulty(value, dif):
+    global difficulty
+    difficulty = dif
+
+
+def set_resolution(value, size):
+    global screen_size
+    global FULLSCREEN
+    if size == 'Full Screen':
+        screen_size = (FULLSCREEN.current_w, FULLSCREEN.current_h)
+    else:
+        screen_size = size
 
 
 def main_background():
@@ -277,6 +297,15 @@ def main():
                                 ('Hard', 'HARD')],
                                selector_id='difficulty',
                                default=1, onchange=set_difficulty)
+
+    settings_menu.add_selector('Select resolution ',
+                               [('600×800', (800, 600)),
+                                ('1600×1024', (1600, 1024)),
+                                ('1680×1050', (1680, 1050)),
+                                ('1920×1080', (1920, 1080)),
+                                ('Full Screen', 'Full Screen')],
+                               selector_id='screen',
+                               default=4, onchange=set_resolution)
 
     settings_menu.add_button('Return to main menu', pygame_menu.events.BACK,
                              align=pygame_menu.locals.ALIGN_CENTER)
