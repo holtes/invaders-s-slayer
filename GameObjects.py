@@ -1,12 +1,6 @@
 import pygame
 import random
 import math
-import time
-from collections import deque
-from tornado.ioloop import IOLoop
-from datetime import datetime, timedelta
-
-current = deque()
 
 FPS = 60
 

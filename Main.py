@@ -265,17 +265,36 @@ def main():
     pygame.init()
     os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-    # Create pygame screen and objects
+    # Создание экрана и объектов
     surface = pygame.display.set_mode(WINDOW_SIZE)
-    pygame.display.set_caption('Example - Multi Input')
+    pygame.display.set_caption('Invaders slayer - Main menu')
     clock = pygame.time.Clock()
 
-    # Create menus: Settings
+    # Создвние меню Настройки
     settings_menu_theme = pygame_menu.themes.THEME_ORANGE.copy()
     settings_menu_theme.title_offset = (5, -2)
     settings_menu_theme.widget_alignment = pygame_menu.locals.ALIGN_LEFT
     settings_menu_theme.widget_font = pygame_menu.font.FONT_OPEN_SANS_LIGHT
     settings_menu_theme.widget_font_size = 20
+
+    # Создание меню Истории
+    story_menu = pygame_menu.Menu(
+        height=WINDOW_SIZE[1] * 0.85,
+        onclose=pygame_menu.events.DISABLE_CLOSE,
+        theme=settings_menu_theme,
+        title='Story',
+        width=WINDOW_SIZE[0] * 0.9,
+    )
+
+    story_menu.add_label("1990, исследовательский центр \"Рассвет\":")
+    story_menu.add_label("Правительство СССР решает уничтожить все свидетельства ")
+    story_menu.add_label("контакта с внеземной цивилизацией. Из-за халатного управления, ")
+    story_menu.add_label("процесс по упокоению пришельцев срывается, выпустив их на")
+    story_menu.add_label("свободу в окрестностях поселка Косколь в Казахстане. Вы ")
+    story_menu.add_label("обычный солдат, оказавшийся в самом пекле совсем один. По еле ")
+    story_menu.add_label("живой рации вы слышите последний приказ: \"Держаться до ")
+    story_menu.add_label("конца!\" Взяв оставшееся оружие, вы выходите на встречу ")
+    story_menu.add_label("опасности, зная, что за вами никто не придёт...")
 
     settings_menu = pygame_menu.Menu(
         height=WINDOW_SIZE[1] * 0.85,
@@ -288,9 +307,9 @@ def main():
     settings_menu.add_label("Перемещение: WASD")
     settings_menu.add_label("Стрельба: Левая кнопка мыши")
     settings_menu.add_label("Пауза: Esc")
-    # Add text inputs with different configurations
+    settings_menu.add_label("Выход в меню: Z")
 
-    # Create selector with 3 difficulty options
+    # Создание выбора сложности
     settings_menu.add_selector('Select difficulty ',
                                [('Easy', 'EASY'),
                                 ('Medium', 'MEDIUM'),
@@ -310,7 +329,7 @@ def main():
     settings_menu.add_button('Return to main menu', pygame_menu.events.BACK,
                              align=pygame_menu.locals.ALIGN_CENTER)
 
-    # Create menus: Main menu
+    # Создание главного меню
     main_menu_theme = pygame_menu.themes.THEME_ORANGE.copy()
     main_menu_theme.widget_offset = (0, 0.09)
     main_menu_theme.title_font = pygame_menu.font.FONT_COMIC_NEUE
@@ -324,23 +343,24 @@ def main():
         title='Main menu',
         theme=main_menu_theme,
     )
-
+    # Содание кнопок
     main_menu.add_button('Play', play_function, font_size=100)
+    main_menu.add_button('Story', story_menu)
     main_menu.add_button('Settings', settings_menu)
     main_menu.add_button('Quit', pygame_menu.events.EXIT)
 
-    # Main loop
+    # Главный цикл
     while True:
-        # Tick
+        # Тик
         clock.tick(FPS)
 
-        # Paint background
+        # Отрисовка заднего фона
         main_background()
 
-        # Main menu
+        # Главное меню
         main_menu.mainloop(surface, main_background, fps_limit=FPS)
 
-        # Flip surface
+        # Окончательная отрисовка
         pygame.display.flip()
 
 
