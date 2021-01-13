@@ -1,3 +1,4 @@
+import sqlite3
 from random import randrange, choice
 import GameObjects
 import pygame_menu
@@ -45,7 +46,12 @@ def play_function():
     global difficulty
     global screen_size
 
-    print(screen_size, difficulty)
+    flag = True
+    pause_time = timedelta()
+    delta_quit = timedelta()
+    time_now = datetime.now()
+    con = sqlite3.connect('records.db')
+    cur = con.cursor()
     pygame.mouse.set_visible(False)
     # Путь до изображений к игре
     path_from_background = 'Data\\Image\\Map1.png'
@@ -125,18 +131,31 @@ def play_function():
         # Обрабатываем нажаните клавишь
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # По нажатию на кнопки выхода выход
+                delta = datetime.now() - time_now - delta_quit
+                result = cur.execute(f"""INSERT INTO records(rec) VALUES('{delta.seconds}') """)
+                con.commit()
                 command_exit = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:  # Если нажата, остановка игры
+                    if not pause:
+                        pause_time = datetime.now()
+                    else:
+                        delta_pause = pause_time - datetime.now()
                     pause = not pause
                 if event.key == pygame.K_z:  # Если нажата, выход в меню
+                    delta = datetime.now() - time_now - delta_quit
+                    result = cur.execute(f"""INSERT INTO records(rec) VALUES('{delta.seconds}') """)
+                    con.commit()
                     command_exit = True
 
         if not pause:
             # Получаем всё нажатые клавиши
             keys = pygame.key.get_pressed()
             buttons = pygame.mouse.get_pressed()
-
+            try:
+                delta_quit += delta_pause
+            except:
+                pass
             # Обрабатываем все удержанные клавиши
             x, y = 0, 0
             if keys[pygame.K_d]:
@@ -201,6 +220,11 @@ def play_function():
                 if pygame.sprite.collide_mask(person, enem):
                     person.hit(enem.get_damage())
                     pos = person.get_rect().center
+                    if person.get_hp() <= 0 and flag:
+                        flag = False
+                        delta = datetime.now() - time_now - delta_quit
+                        result = cur.execute(f"""INSERT INTO records(rec) VALUES('{delta.seconds}') """)
+                        con.commit()
                     indicator = GameObjects.GameObject(
                         (pos[0] + randrange(25), pos[1] + randrange(25)),
                         path_image=damage_indicator.render(
@@ -265,6 +289,9 @@ def main():
     pygame.init()
     os.environ['SDL_VIDEO_CENTERED'] = '1'
 
+    con = sqlite3.connect('records.db')
+    cur = con.cursor()
+    result = cur.execute("""SELECT * FROM records""").fetchall()
     # Создание экрана и объектов
     surface = pygame.display.set_mode(WINDOW_SIZE)
     pygame.display.set_caption('Invaders slayer - Main menu')
@@ -343,10 +370,28 @@ def main():
         title='Main menu',
         theme=main_menu_theme,
     )
+
+    rec_menu = pygame_menu.Menu(
+        height=WINDOW_SIZE[1],
+        width=WINDOW_SIZE[0],
+        onclose=pygame_menu.events.EXIT,  # User press ESC button
+        title='Records',
+        theme=main_menu_theme,
+    )
+    maxx = 0
+    for elem in result:
+        if int(elem[1]) > maxx:
+            maxx = int(elem[1])
+    high_score = 'Your high score: ' + str(maxx)
+    now_score = 'Your previous score: ' + result[len(result) - 1][1]
+    rec_menu.add_label(high_score)
+    rec_menu.add_label(now_score)
+
     # Содание кнопок
     main_menu.add_button('Play', play_function, font_size=100)
     main_menu.add_button('Story', story_menu)
     main_menu.add_button('Settings', settings_menu)
+    main_menu.add_button('Your records', rec_menu)
     main_menu.add_button('Quit', pygame_menu.events.EXIT)
 
     # Главный цикл
